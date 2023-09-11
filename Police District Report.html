@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>San Francisco Police District Crime Statistics — Produced by Siddharth Chattoraj / San Francisco District Attorney's Office</title>
+    <style>
+        /* CSS styling */
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        /* Center the chart div horizontally */
+        #chart-container {
+            display: flex; /* Use flexbox to align charts side by side */
+            justify-content: center; /* Center the charts horizontally */
+            margin-top: -75px; /* Adjust this value to bring everything up */
+        }
+
+        /* Set width and height for each chart */
+        .chart {
+            width: 400px;
+            height: 400px;
+            margin: 10px; /* Decrease margin between the charts */
+        }
+
+        /* Adjust margin for the filing plot chart */
+        #filing-plot-content {
+            margin-top: -300px; /* Adjust this value to move the filing plot chart up */
+        }
+
+        /* Adjust margin for the disposition plot chart */
+        #dispo-plot-content {
+            margin-top: -50px; /* Adjust this value to move the disposition plot chart up */
+        }
+
+        /* Adjust margin for the subtitle */
+        #subtitle {
+            margin-top: 0; /* Decrease the gap between subtitle and charts */
+        }
+
+        /* Center the SFDA logo */
+        #sfda-logo {
+            text-align: center;
+            margin-top: -40px; /* Adjust this value to adjust the space between the logo and disposition plot */
+        }
+
+        /* Bottom section */
+        #bottom-section {
+            display: flex;
+            justify-content: center;
+            margin-top: -10px; 
+        }
+
+        /* Styling for the title and subtitle */
+        .title-subtitle-container {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .report-title {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .summary {
+            font-size: 12px;
+            font-weight: normal;
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+
+        #subtitle-bottom {
+            margin-top: 0px; /* Decrease this value to move the second subtitle up */
+        }
+
+        /* Adjust margin for the map */
+        #map-content {
+            margin-top: -31px; /* Decrease the gap between map and charts */
+            margin-left: -80px;
+        }
+
+        /* New style for the arrest heatmap container */
+        #arrest-heatmap-content {
+            margin-top: -65px; /* Adjust this value to position the heatmap above the map */
+            margin-left: -5px; /* Adjust this value to move the heatmap to the right */
+        }
+
+        /* New style for the last Pie chart */
+        #sup-pie-mf-content{
+            margin-top: -475px;
+            margin-bottom: 0px; /* Adjust this value to move the chart down */
+            margin-left: auto;
+            margin-right: -70px;
+        }
+
+        /* New style for the square box */
+        #box-content{
+            margin-top: auto;
+            margin-bottom: auto; /* Adjust this value to move the chart down */
+            margin-left: auto;
+            margin-right: -70px;
+        }
+
+        /* New style for the dispo box container */
+        #dispo-box{
+            margin-top: -15px;
+            margin-left: -40px;
+        }
+
+        /*New style for the dispo bar chart */
+        #dispo-bar{
+            margin-top: -160px;
+            margin-left: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="text-align: center;">
+        <img src="Data/sfda%20logo.png" alt="SFDA Logo" width="15%" style="margin-left: 0px;" />
+    </div>
+
+    <!-- Original Title and Subtitle -->
+    <div class="title-subtitle-container">
+        <h1 class="report-title" id="report-title"></h1>
+        <h2 class="subtitle" id="subtitle"></h2>
+        <h3 class="summary" id="summary"></h3>
+    </div>
+
+    <!-- New container for Police JSON/arrest_heatmap.json content -->
+    <div id="arrest-heatmap-content"></div>
+
+    <!-- New container for Police JSON/sup_pie_MF.json content -->
+    <div class="chart" id="sup-pie-mf-content"></div>
+
+    <!-- New container for Police JSON/box.json content -->
+    <div class="chart" id="box-content" style="margin-top: -40px;"></div>
+
+    <!-- New container for Police JSON/filing_plot.json content -->
+    <div id="filing-plot-content"></div>
+
+    <!-- New container for Police JSON/dispo_box.json content-->
+    <div id="dispo-box"></div>
+
+    <!-- New container for Police JSON/fm.json content-->
+    <div id="dispo-bar"></div>
+
+    <!-- New container for Police JSON/dispo_plot.json content -->
+    <div id="dispo-plot-content"></div>
+
+    <!-- Extra space section -->
+    <div id="bottom-section">
+        <div class="title-subtitle-container">
+            <h1 class="report-title" id="report-title-bottom"></h1>
+            <h2 class="subtitle" id="subtitle-bottom"></h2>
+            <h3 class="summary" id="summary-bottom"></h3>
+        </div>
+    </div>
+
+    <!-- Container for Plotly map -->
+    <div id="map-content" style="font-size: 6pt; color: black; font-family: Arial;">
+        <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Map Layout © OpenStreetMap and is available under the Open Database License. More information can be found at openstreetmap.org/copyright.
+    </div>
+
+    <!-- Include the Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <!-- Load the generated JSON data and create the charts using Plotly.js -->
+    <script>
+        // Function to create the filing plot using Plotly.js
+        function createFilingPlot(data, layout) {
+            Plotly.newPlot('filing-plot-content', data, layout);
+        }
+
+        // Function to create the disposition plot using Plotly.js
+        function createDispositionPlot(data, layout) {
+            Plotly.newPlot('dispo-plot-content', data, layout);
+        }
+
+        // Fetch the "titles.json" file
+        fetch("Police JSON/titles.json")
+            .then(response => response.json())
+            .then(data => {
+                // Update the original h1 element with the report_title property
+                document.getElementById("report-title").textContent = data.report_title;
+
+                // Update the original subtitle h2 element with the subtitle property
+                document.getElementById("subtitle").textContent = data.subtitle;
+
+                // Update the original summary h3 element with the summary property
+                document.getElementById("summary").textContent = data.summary;
+
+                // Fetch the JSON data for the filing plot
+                fetch("Police JSON/filing_plot.json")
+                    .then(response => response.json())
+                    .then(data => {
+                        // Call the function to create the filing plot
+                        createFilingPlot(data.data, data.layout);
+                    });
+
+                // Fetch the JSON data for the disposition plot
+                fetch("Police JSON/dispo_plot.json")
+                    .then(response => response.json())
+                    .then(data => {
+                        // Call the function to create the disposition plot
+                        createDispositionPlot(data.data, data.layout);
+                    });
+
+                // Fetch the JSON data for the Pie chart
+                fetch("Police JSON/sup_pie_MF.json")
+                    .then(response => response.json())
+                    .then(data => {
+                        // Create the second Pie chart
+                        Plotly.newPlot('sup-pie-mf-content', data.data, data.layout);
+                    });
+                
+                // Fetch the JSON data for the box
+                fetch("Police JSON/box.json")
+                    .then(response => response.json())
+                    .then(data => {
+                        // Create the box
+                        Plotly.newPlot('box-content', data.data, data.layout);
+                    });
+            });
+
+        // Fetch the JSON data for the arrest heatmap
+        fetch("Police JSON/arrest_heatmap.json")
+            .then(response => response.json())
+            .then(data => {
+                // Create the arrest heatmap
+                Plotly.newPlot('arrest-heatmap-content', data.data, data.layout);
+            });
+        
+        // Fetch the JSON data for the dispo box
+        fetch("Police JSON/dispo_box.json")
+            .then(response => response.json())
+            .then(data => {
+                // Create the arrest heatmap
+                Plotly.newPlot('dispo-box', data.data, data.layout);
+            });
+        
+        // Fetch the JSON data for the dispo bar
+        fetch("Police JSON/fm.json")
+            .then(response => response.json())
+            .then(data => {
+                // Create the arrest heatmap
+                Plotly.newPlot('dispo-bar', data.data, data.layout);
+            });
+
+        // Fetch the JSON data for the Plotly map
+        fetch("Police JSON/map.json")
+            .then(response => response.json())
+            .then(data => {
+                // Create the Plotly map
+                Plotly.newPlot('map-content', data.data, data.layout);
+            });
+    </script>
+</body>
+</html>
